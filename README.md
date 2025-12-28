@@ -14,36 +14,36 @@ For such environments, deck supports external CLI tools for image upload/delete 
 
 | CLI | Storage |
 |-----|---------|
-| `mount-gcs` | Google Cloud Storage |
-| `mount-s3` | Amazon S3 (coming soon) |
+| `reprint-gcs` | Google Cloud Storage |
+| `reprint-s3` | Amazon S3 (coming soon) |
 
 ## Installation
 
 ```bash
-go install github.com/minodisk/mount/cmd/mount-gcs@latest
+go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ```
 
 ## Usage with deck
 
 ```bash
-deck apply -u "mount-gcs upload" -d "mount-gcs delete" slide.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" slide.md
 ```
 
 ### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `MOUNT_BUCKET` | Yes | GCS bucket name |
-| `MOUNT_PREFIX` | No | Object prefix (default: empty) |
-| `MOUNT_PUBLIC` | No | Generate public URL (`true`/`false`, default: `true`) |
+| `REPRINT_BUCKET` | Yes | GCS bucket name |
+| `REPRINT_PREFIX` | No | Object prefix (default: empty) |
+| `REPRINT_PUBLIC` | No | Generate public URL (`true`/`false`, default: `true`) |
 
 ### CLI Flags
 
 You can also use flags instead of environment variables (flags take precedence):
 
 ```bash
-mount-gcs upload --bucket my-bucket --prefix images/ --public=true
-mount-gcs delete --bucket my-bucket
+reprint-gcs upload --bucket my-bucket --prefix images/ --public=true
+reprint-gcs delete --bucket my-bucket
 ```
 
 ## Commands
@@ -83,23 +83,23 @@ Uses GCP default credentials. Authenticate via:
 
 ```bash
 # Configure via environment variables
-export MOUNT_BUCKET=my-images-bucket
-export MOUNT_PREFIX=deck/
+export REPRINT_BUCKET=my-images-bucket
+export REPRINT_PREFIX=deck/
 
 # Use with deck
-deck apply -u "mount-gcs upload" -d "mount-gcs delete" presentation.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" presentation.md
 
 # Manual test
 export DECK_UPLOAD_MIME=image/png
 export DECK_UPLOAD_FILENAME=test.png
-cat image.png | mount-gcs upload
+cat image.png | reprint-gcs upload
 # Output:
 # https://storage.googleapis.com/my-images-bucket/deck/test.png
 # deck/test.png
 
 # Delete
 export DECK_DELETE_ID=deck/test.png
-mount-gcs delete
+reprint-gcs delete
 ```
 
 ## License

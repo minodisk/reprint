@@ -14,36 +14,36 @@
 
 | CLI | ストレージ |
 |-----|-----------|
-| `mount-gcs` | Google Cloud Storage |
-| `mount-s3` | Amazon S3（近日対応予定） |
+| `reprint-gcs` | Google Cloud Storage |
+| `reprint-s3` | Amazon S3（近日対応予定） |
 
 ## インストール
 
 ```bash
-go install github.com/minodisk/mount/cmd/mount-gcs@latest
+go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ```
 
 ## deck での使用方法
 
 ```bash
-deck apply -u "mount-gcs upload" -d "mount-gcs delete" slide.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" slide.md
 ```
 
 ### 環境変数
 
 | 変数名 | 必須 | 説明 |
 |--------|------|------|
-| `MOUNT_BUCKET` | Yes | GCSバケット名 |
-| `MOUNT_PREFIX` | No | オブジェクトのプレフィックス（デフォルト: 空） |
-| `MOUNT_PUBLIC` | No | 公開URLを生成するか（`true`/`false`、デフォルト: `true`） |
+| `REPRINT_BUCKET` | Yes | GCSバケット名 |
+| `REPRINT_PREFIX` | No | オブジェクトのプレフィックス（デフォルト: 空） |
+| `REPRINT_PUBLIC` | No | 公開URLを生成するか（`true`/`false`、デフォルト: `true`） |
 
 ### CLIフラグ
 
 環境変数の代わりにフラグでも設定できます（フラグが優先）:
 
 ```bash
-mount-gcs upload --bucket my-bucket --prefix images/ --public=true
-mount-gcs delete --bucket my-bucket
+reprint-gcs upload --bucket my-bucket --prefix images/ --public=true
+reprint-gcs delete --bucket my-bucket
 ```
 
 ## コマンド
@@ -83,23 +83,23 @@ GCPのデフォルト認証情報を使用します。以下のいずれかで�
 
 ```bash
 # 環境変数で設定
-export MOUNT_BUCKET=my-images-bucket
-export MOUNT_PREFIX=deck/
+export REPRINT_BUCKET=my-images-bucket
+export REPRINT_PREFIX=deck/
 
 # deck から使用
-deck apply -u "mount-gcs upload" -d "mount-gcs delete" presentation.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" presentation.md
 
 # 手動テスト
 export DECK_UPLOAD_MIME=image/png
 export DECK_UPLOAD_FILENAME=test.png
-cat image.png | mount-gcs upload
+cat image.png | reprint-gcs upload
 # 出力:
 # https://storage.googleapis.com/my-images-bucket/deck/test.png
 # deck/test.png
 
 # 削除
 export DECK_DELETE_ID=deck/test.png
-mount-gcs delete
+reprint-gcs delete
 ```
 
 ## ライセンス
