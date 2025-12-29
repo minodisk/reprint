@@ -1,0 +1,14 @@
+[tools]
+go = "1.24.6"
+
+[tasks.build]
+description = "Build all CLIs"
+depends = ["build:gcs"]
+
+[tasks."build:gcs"]
+description = "Build reprint-gcs"
+run = "go build -o reprint-gcs ./cmd/reprint-gcs"
+
+[tasks."build:s3"]
+description = "Build reprint-s3"
+run = "go build -o reprint-s3 ./cmd/reprint-s3"
