@@ -26,25 +26,28 @@ go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ## Usage with deck
 
 ```bash
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" slide.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" slide.md
 ```
 
-### Environment Variables
+## Configuration
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `REPRINT_BUCKET` | Yes | GCS bucket name |
-| `REPRINT_PREFIX` | No | Object prefix (default: empty) |
-| `REPRINT_PUBLIC` | No | Generate public URL (`true`/`false`, default: `true`) |
+Configuration can be set via CLI flags, environment variables, or config file.
 
-### CLI Flags
+**Priority (highest to lowest):** CLI flag > Environment variable > Config file
 
-You can also use flags instead of environment variables (flags take precedence):
+| CLI flag | Environment variable | Config file | Required | Description |
+|----------|---------------------|-------------|----------|-------------|
+| `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
+| `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path |
 
-```bash
-reprint-gcs upload --bucket my-bucket --prefix images/ --public=true
-reprint-gcs delete --bucket my-bucket
-```
+### Authentication
+
+**Priority (highest to lowest):**
+1. `--credentials` / `REPRINT_CREDENTIALS` / `credentials` (service account key file)
+2. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
+3. `gcloud auth application-default login`
+4. GCE/Cloud Run metadata server
 
 ## Commands
 
@@ -54,54 +57,63 @@ Reads image data from stdin and uploads it to GCS.
 
 **Input:**
 - stdin: Image binary data
-- Environment variables: `DECK_UPLOAD_MIME` (MIME type), `DECK_UPLOAD_FILENAME` (filename)
+
+| CLI flag | Environment variable | Required | Description |
+|----------|---------------------|----------|-------------|
+| `--mime` | `DECK_UPLOAD_MIME` | Yes | Image MIME type |
 
 **Output (stdout):**
 ```
 <public URL>
-<resource ID>
+<filename>
 ```
 
-The resource ID is the GCS object path (`prefix/filename`).
+Filename is auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`).
 
 ### delete
 
 Deletes the specified object from GCS.
 
 **Input:**
-- Environment variable: `DECK_DELETE_ID` (resource ID)
 
-## Authentication
-
-Uses GCP default credentials. Authenticate via:
-
-1. `gcloud auth application-default login`
-2. Service account key (`GOOGLE_APPLICATION_CREDENTIALS` environment variable)
-3. GCE/Cloud Run metadata server
+| CLI flag | Environment variable | Required | Description |
+|----------|---------------------|----------|-------------|
+| `--filename` | `DECK_DELETE_FILENAME` | Yes | Filename to delete |
 
 ## Example
 
+### Config file
+
+Create `~/.config/reprint/config.yaml`:
+
+```yaml
+bucket: my-images-bucket
+prefix: deck/
+```
+
+### Environment variables
+
 ```bash
-# Configure via environment variables
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
+```
 
+### Usage
+
+```bash
 # Use with deck
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" presentation.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" presentation.md
 
-# Manual test
-export DECK_UPLOAD_MIME=image/png
-export DECK_UPLOAD_FILENAME=test.png
+# Manual upload test
 cat image.png | reprint-gcs upload
 # Output:
-# https://storage.googleapis.com/my-images-bucket/deck/test.png
-# deck/test.png
+# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-5678-90ab-cdef-1234567890ab
+# a1b2c3d4-5678-90ab-cdef-1234567890ab
 
-# Delete
-export DECK_DELETE_ID=deck/test.png
-reprint-gcs delete
+# Manual delete test
+reprint-gcs delete --filename a1b2c3d4-5678-90ab-cdef-1234567890ab
 ```
 
 ## License
 
-MIT
+[MIT](LICENSE)

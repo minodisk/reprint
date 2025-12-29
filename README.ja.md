@@ -26,25 +26,28 @@ go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ## deck での使用方法
 
 ```bash
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" slide.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" slide.md
 ```
 
-### 環境変数
+## 設定
 
-| 変数名 | 必須 | 説明 |
-|--------|------|------|
-| `REPRINT_BUCKET` | Yes | GCSバケット名 |
-| `REPRINT_PREFIX` | No | オブジェクトのプレフィックス（デフォルト: 空） |
-| `REPRINT_PUBLIC` | No | 公開URLを生成するか（`true`/`false`、デフォルト: `true`） |
+設定はCLIフラグ、環境変数、設定ファイルで指定できます。
 
-### CLIフラグ
+**優先順位（高い順）:** CLIフラグ > 環境変数 > 設定ファイル
 
-環境変数の代わりにフラグでも設定できます（フラグが優先）:
+| CLIフラグ | 環境変数 | 設定ファイル | 必須 | 説明 |
+|----------|----------|-------------|------|------|
+| `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCSバケット名 |
+| `--prefix` | `REPRINT_PREFIX` | `prefix` | No | オブジェクトのプレフィックス（デフォルト: 空） |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | サービスアカウントキーファイルのパス |
 
-```bash
-reprint-gcs upload --bucket my-bucket --prefix images/ --public=true
-reprint-gcs delete --bucket my-bucket
-```
+### 認証
+
+**優先順位（高い順）:**
+1. `--credentials` / `REPRINT_CREDENTIALS` / `credentials`（サービスアカウントキーファイル）
+2. `GOOGLE_APPLICATION_CREDENTIALS` 環境変数
+3. `gcloud auth application-default login`
+4. GCE/Cloud Run のメタデータサーバー
 
 ## コマンド
 
@@ -54,54 +57,63 @@ stdin から画像データを読み取り、GCS にアップロードします�
 
 **入力:**
 - stdin: 画像バイナリデータ
-- 環境変数: `DECK_UPLOAD_MIME`（MIMEタイプ）、`DECK_UPLOAD_FILENAME`（ファイル名）
+
+| CLIフラグ | 環境変数 | 必須 | 説明 |
+|----------|----------|------|------|
+| `--mime` | `DECK_UPLOAD_MIME` | Yes | 画像のMIMEタイプ |
 
 **出力 (stdout):**
 ```
 <公開URL>
-<リソースID>
+<ファイル名>
 ```
 
-リソースIDはGCSオブジェクトのパス（`prefix/filename`）です。
+ファイル名は拡張子なしのUUID（例: `a1b2c3d4-5678-90ab-cdef-1234567890ab`）。
 
 ### delete
 
 指定されたオブジェクトをGCSから削除します。
 
 **入力:**
-- 環境変数: `DECK_DELETE_ID`（リソースID）
 
-## 認証
-
-GCPのデフォルト認証情報を使用します。以下のいずれかで認証できます:
-
-1. `gcloud auth application-default login`
-2. サービスアカウントキー（`GOOGLE_APPLICATION_CREDENTIALS` 環境変数）
-3. GCE/Cloud Run のメタデータサーバー
+| CLIフラグ | 環境変数 | 必須 | 説明 |
+|----------|----------|------|------|
+| `--filename` | `DECK_DELETE_FILENAME` | Yes | 削除するファイル名 |
 
 ## 使用例
 
+### 設定ファイル
+
+`~/.config/reprint/config.yaml` を作成:
+
+```yaml
+bucket: my-images-bucket
+prefix: deck/
+```
+
+### 環境変数
+
 ```bash
-# 環境変数で設定
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
+```
 
+### 使用方法
+
+```bash
 # deck から使用
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete" presentation.md
+deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" presentation.md
 
-# 手動テスト
-export DECK_UPLOAD_MIME=image/png
-export DECK_UPLOAD_FILENAME=test.png
+# 手動アップロードテスト
 cat image.png | reprint-gcs upload
 # 出力:
-# https://storage.googleapis.com/my-images-bucket/deck/test.png
-# deck/test.png
+# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-5678-90ab-cdef-1234567890ab
+# a1b2c3d4-5678-90ab-cdef-1234567890ab
 
-# 削除
-export DECK_DELETE_ID=deck/test.png
-reprint-gcs delete
+# 手動削除テスト
+reprint-gcs delete --filename a1b2c3d4-5678-90ab-cdef-1234567890ab
 ```
 
 ## ライセンス
 
-MIT
+[MIT](LICENSE)
