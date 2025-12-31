@@ -84,6 +84,15 @@ func (c *Client) Delete(ctx context.Context, filename string) error {
 	return nil
 }
 
+// CheckBucket checks if the bucket exists and is accessible.
+func (c *Client) CheckBucket(ctx context.Context) error {
+	_, err := c.client.Bucket(c.bucket).Attrs(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to access bucket %q: %w", c.bucket, err)
+	}
+	return nil
+}
+
 // PublicURL returns the public URL for an object.
 func (c *Client) PublicURL(filename string) string {
 	objectName := c.objectName(filename)
