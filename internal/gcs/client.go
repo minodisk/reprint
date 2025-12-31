@@ -11,18 +11,28 @@ import (
 
 // Client wraps the GCS client.
 type Client struct {
-	client *storage.Client
-	bucket string
-	prefix string
+	client   *storage.Client
+	bucket   string
+	prefix   string
+	endpoint string // custom endpoint for emulator
 }
 
 // NewClient creates a new GCS client.
 // If credentials is provided, it will be used for authentication.
 // Otherwise, default credentials will be used.
 func NewClient(ctx context.Context, bucket, prefix, credentials string) (*Client, error) {
+	return NewClientWithEndpoint(ctx, bucket, prefix, credentials, "")
+}
+
+// NewClientWithEndpoint creates a new GCS client with a custom endpoint.
+// This is useful for testing with emulators like fake-gcs-server.
+func NewClientWithEndpoint(ctx context.Context, bucket, prefix, credentials, endpoint string) (*Client, error) {
 	var opts []option.ClientOption
 	if credentials != "" {
 		opts = append(opts, option.WithCredentialsFile(credentials))
+	}
+	if endpoint != "" {
+		opts = append(opts, option.WithEndpoint(endpoint), option.WithoutAuthentication())
 	}
 
 	client, err := storage.NewClient(ctx, opts...)
@@ -31,9 +41,10 @@ func NewClient(ctx context.Context, bucket, prefix, credentials string) (*Client
 	}
 
 	return &Client{
-		client: client,
-		bucket: bucket,
-		prefix: prefix,
+		client:   client,
+		bucket:   bucket,
+		prefix:   prefix,
+		endpoint: endpoint,
 	}, nil
 }
 
@@ -76,6 +87,10 @@ func (c *Client) Delete(ctx context.Context, filename string) error {
 // PublicURL returns the public URL for an object.
 func (c *Client) PublicURL(filename string) string {
 	objectName := c.objectName(filename)
+	if c.endpoint != "" {
+		// For emulator, use the endpoint URL
+		return fmt.Sprintf("http://localhost:4443/%s/%s", c.bucket, objectName)
+	}
 	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", c.bucket, objectName)
 }
 
