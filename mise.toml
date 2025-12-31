@@ -12,3 +12,7 @@ run = "go build -o reprint-gcs ./cmd/reprint-gcs"
 [tasks."build:s3"]
 description = "Build reprint-s3"
 run = "go build -o reprint-s3 ./cmd/reprint-s3"
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./..."

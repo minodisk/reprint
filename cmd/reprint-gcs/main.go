@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/google/uuid"
@@ -16,27 +15,13 @@ var (
 	bucket      string
 	prefix      string
 	credentials string
+	mime        string
+	filename    string
 )
-
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
 
 var rootCmd = &cobra.Command{
 	Use:   "reprint-gcs",
 	Short: "External image uploader CLI for deck using Google Cloud Storage",
-}
-
-func init() {
-	rootCmd.PersistentFlags().StringVar(&bucket, "bucket", "", "GCS bucket name")
-	rootCmd.PersistentFlags().StringVar(&prefix, "prefix", "", "Object prefix")
-	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path")
-
-	rootCmd.AddCommand(uploadCmd)
-	rootCmd.AddCommand(deleteCmd)
 }
 
 var uploadCmd = &cobra.Command{
@@ -45,10 +30,34 @@ var uploadCmd = &cobra.Command{
 	RunE:  runUpload,
 }
 
-var mime string
+var deleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete image from GCS",
+	RunE:  runDelete,
+}
 
 func init() {
+	// Root flags
+	rootCmd.PersistentFlags().StringVar(&bucket, "bucket", "", "GCS bucket name")
+	rootCmd.PersistentFlags().StringVar(&prefix, "prefix", "", "Object prefix")
+	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path")
+
+	// Upload flags
 	uploadCmd.Flags().StringVar(&mime, "mime", "", "Image MIME type")
+
+	// Delete flags
+	deleteCmd.Flags().StringVar(&filename, "filename", "", "Filename to delete")
+
+	// Add subcommands
+	rootCmd.AddCommand(uploadCmd)
+	rootCmd.AddCommand(deleteCmd)
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func runUpload(cmd *cobra.Command, args []string) error {
@@ -88,18 +97,6 @@ func runUpload(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete image from GCS",
-	RunE:  runDelete,
-}
-
-var filename string
-
-func init() {
-	deleteCmd.Flags().StringVar(&filename, "filename", "", "Filename to delete")
-}
-
 func runDelete(cmd *cobra.Command, args []string) error {
 	cfg, err := loadConfig()
 	if err != nil {
@@ -125,20 +122,13 @@ func runDelete(cmd *cobra.Command, args []string) error {
 }
 
 func loadConfig() (*config.Config, error) {
-	cfg, err := config.Load()
+	cfg, err := config.Load(
+		config.WithBucket(bucket),
+		config.WithPrefix(prefix),
+		config.WithCredentials(credentials),
+	)
 	if err != nil {
 		return nil, err
-	}
-
-	// Override with CLI flags
-	if bucket != "" {
-		cfg.Bucket = bucket
-	}
-	if prefix != "" {
-		cfg.Prefix = prefix
-	}
-	if credentials != "" {
-		cfg.Credentials = credentials
 	}
 
 	// Validate required fields
@@ -148,6 +138,3 @@ func loadConfig() (*config.Config, error) {
 
 	return cfg, nil
 }
-
-// Ensure stdin is not used elsewhere
-var _ io.Reader = os.Stdin
