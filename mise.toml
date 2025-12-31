@@ -14,5 +14,17 @@ description = "Build reprint-s3"
 run = "go build -o reprint-s3 ./cmd/reprint-s3"
 
 [tasks.test]
-description = "Run all tests"
-run = "go test ./..."
+description = "Run unit tests"
+run = "go test -short ./..."
+
+[tasks."test:integration"]
+description = "Run integration tests (requires fake-gcs-server)"
+run = "go test -run Integration ./..."
+
+[tasks."emulator:gcs"]
+description = "Start fake-gcs-server"
+run = "docker run --rm -p 4443:4443 --name fake-gcs-server fsouza/fake-gcs-server -scheme http -port 4443"
+
+[tasks."emulator:gcs:stop"]
+description = "Stop fake-gcs-server"
+run = "docker stop fake-gcs-server"
