@@ -36,6 +36,12 @@ var deleteCmd = &cobra.Command{
 	RunE:  runDelete,
 }
 
+var doctorCmd = &cobra.Command{
+	Use:   "doctor",
+	Short: "Diagnose configuration and credentials",
+	RunE:  runDoctor,
+}
+
 func init() {
 	// Root flags
 	rootCmd.PersistentFlags().StringVar(&bucket, "bucket", "", "GCS bucket name")
@@ -51,6 +57,7 @@ func init() {
 	// Add subcommands
 	rootCmd.AddCommand(uploadCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(doctorCmd)
 }
 
 func main() {
@@ -137,4 +144,82 @@ func loadConfig() (*config.Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func runDoctor(cmd *cobra.Command, args []string) error {
+	fmt.Println("Checking reprint-gcs configuration...")
+	fmt.Println()
+
+	allOK := true
+
+	// Check 1: Load config
+	fmt.Print("[Config] Loading configuration... ")
+	cfg, err := config.Load(
+		config.WithBucket(bucket),
+		config.WithPrefix(prefix),
+		config.WithCredentials(credentials),
+	)
+	if err != nil {
+		fmt.Printf("ERROR: %v\n", err)
+		return nil
+	}
+	fmt.Println("OK")
+
+	// Check 2: Bucket configured
+	fmt.Print("[Config] Bucket configured... ")
+	if cfg.Bucket == "" {
+		fmt.Println("ERROR: bucket is not configured")
+		fmt.Println("  Set via: --bucket, REPRINT_BUCKET, or ~/.config/reprint/config.yaml")
+		allOK = false
+	} else {
+		fmt.Printf("OK (%s)\n", cfg.Bucket)
+	}
+
+	// Check 3: Prefix (optional)
+	fmt.Print("[Config] Prefix configured... ")
+	if cfg.Prefix == "" {
+		fmt.Println("(not set)")
+	} else {
+		fmt.Printf("OK (%s)\n", cfg.Prefix)
+	}
+
+	// Check 4: Credentials
+	fmt.Print("[Auth] Credentials... ")
+	if cfg.Credentials != "" {
+		fmt.Printf("OK (using %s)\n", cfg.Credentials)
+	} else {
+		fmt.Println("OK (using default credentials)")
+	}
+
+	// Check 5: GCS connection (only if bucket is configured)
+	if cfg.Bucket != "" {
+		fmt.Print("[GCS] Connecting to GCS... ")
+		ctx := context.Background()
+		client, err := gcs.NewClient(ctx, cfg.Bucket, cfg.Prefix, cfg.Credentials)
+		if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			allOK = false
+		} else {
+			defer client.Close()
+			fmt.Println("OK")
+
+			// Check 6: Bucket access
+			fmt.Print("[GCS] Checking bucket access... ")
+			if err := client.CheckBucket(ctx); err != nil {
+				fmt.Printf("ERROR: %v\n", err)
+				allOK = false
+			} else {
+				fmt.Println("OK")
+			}
+		}
+	}
+
+	fmt.Println()
+	if allOK {
+		fmt.Println("All checks passed!")
+	} else {
+		fmt.Println("Some checks failed. Please fix the issues above.")
+	}
+
+	return nil
 }
