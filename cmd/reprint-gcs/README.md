@@ -18,13 +18,13 @@ deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}
 
 Configuration can be set via CLI flags, environment variables, or config file.
 
-**Priority (highest to lowest):** CLI flag > Environment variable > Config file
+**Priority (highest to lowest):** CLI flag > Environment variable > Config file > Default path
 
 | CLI flag | Environment variable | Config file | Required | Description |
 |----------|---------------------|-------------|----------|-------------|
-| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | Yes | Service account key file path |
 | `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
 | `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path (default: `~/.config/reprint-gcs/credentials.json`) |
 
 ### Authentication
 
@@ -33,7 +33,7 @@ A service account key file is required. User credentials (`gcloud auth applicati
 **Setup:**
 1. Create a service account in GCP Console
 2. Download the key file (JSON)
-3. Set via `--credentials`, `REPRINT_CREDENTIALS`, or config file
+3. Place at `~/.config/reprint-gcs/credentials.json`
 
 ## Commands
 

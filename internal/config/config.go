@@ -7,11 +7,26 @@ import (
 	"github.com/spf13/viper"
 )
 
+// DefaultCredentialsFilename is the default credentials file name.
+const DefaultCredentialsFilename = "credentials.json"
+
 // Config holds the configuration for reprint CLIs.
 type Config struct {
 	Bucket      string `mapstructure:"bucket"`
 	Prefix      string `mapstructure:"prefix"`
 	Credentials string `mapstructure:"credentials"`
+	appName     string // internal: used for default credentials path
+}
+
+// DefaultCredentialsPath returns the default path for credentials file.
+// Returns empty string if home directory cannot be determined.
+// appName should be the CLI name (e.g., "reprint-gcs", "reprint-s3").
+func DefaultCredentialsPath(appName string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".config", appName, DefaultCredentialsFilename)
 }
 
 // Option is a function that modifies Config.
@@ -41,6 +56,13 @@ func WithCredentials(credentials string) Option {
 		if credentials != "" {
 			c.Credentials = credentials
 		}
+	}
+}
+
+// WithAppName sets the app name for default credentials path.
+func WithAppName(appName string) Option {
+	return func(c *Config) {
+		c.appName = appName
 	}
 }
 
@@ -78,6 +100,16 @@ func Load(opts ...Option) (*Config, error) {
 	// Apply CLI flag options (highest priority)
 	for _, opt := range opts {
 		opt(&cfg)
+	}
+
+	// If credentials not set, check default path
+	if cfg.Credentials == "" && cfg.appName != "" {
+		defaultPath := DefaultCredentialsPath(cfg.appName)
+		if defaultPath != "" {
+			if _, err := os.Stat(defaultPath); err == nil {
+				cfg.Credentials = defaultPath
+			}
+		}
 	}
 
 	return &cfg, nil

@@ -128,8 +128,11 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	return client.Delete(ctx, filename)
 }
 
+const appName = "reprint-gcs"
+
 func loadConfig() (*config.Config, error) {
 	cfg, err := config.Load(
+		config.WithAppName(appName),
 		config.WithBucket(bucket),
 		config.WithPrefix(prefix),
 		config.WithCredentials(credentials),
@@ -158,6 +161,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	// Check 1: Load config
 	fmt.Print("[Config] Loading configuration... ")
 	cfg, err := config.Load(
+		config.WithAppName(appName),
 		config.WithBucket(bucket),
 		config.WithPrefix(prefix),
 		config.WithCredentials(credentials),
@@ -188,10 +192,17 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 
 	// Check 4: Credentials configured
 	fmt.Print("[Auth] Credentials configured... ")
+	defaultCredPath := config.DefaultCredentialsPath(appName)
 	if cfg.Credentials == "" {
 		fmt.Println("ERROR: credentials is not configured")
-		fmt.Println("  Set via: --credentials, REPRINT_CREDENTIALS, or ~/.config/reprint/config.yaml")
+		fmt.Println("  Set via:")
+		fmt.Println("    - --credentials flag")
+		fmt.Println("    - REPRINT_CREDENTIALS environment variable")
+		fmt.Println("    - credentials in ~/.config/reprint/config.yaml")
+		fmt.Printf("    - Place file at %s\n", defaultCredPath)
 		allOK = false
+	} else if cfg.Credentials == defaultCredPath {
+		fmt.Printf("OK (using default: %s)\n", cfg.Credentials)
 	} else {
 		fmt.Printf("OK (%s)\n", cfg.Credentials)
 	}
