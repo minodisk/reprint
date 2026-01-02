@@ -1,5 +1,22 @@
 [tools]
 go = "1.24.6"
+dprint = "latest"
+
+[tasks.fmt]
+description = "Format all files"
+depends = ["fmt:go", "fmt:dprint"]
+
+[tasks."fmt:go"]
+description = "Format Go files"
+run = "go fmt ./..."
+
+[tasks."fmt:dprint"]
+description = "Format non-Go files (md, yaml, json)"
+run = "dprint fmt"
+
+[tasks."fmt:check"]
+description = "Check formatting without modifying files"
+run = ["gofmt -l .", "dprint check"]
 
 [tasks.build]
 description = "Build all CLIs"

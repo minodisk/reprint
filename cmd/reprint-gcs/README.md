@@ -18,11 +18,11 @@ deck apply -u "reprint-gcs upload --mime {{mime}}" -d "reprint-gcs delete --obje
 
 Configuration can be set via CLI flags, environment variables, or config file.
 
-| CLI flag | Environment variable | Config file | Required | Description |
-|----------|---------------------|-------------|----------|-------------|
-| `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
-| `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
-| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path (default: `~/.config/reprint-gcs/credentials.json`) |
+| CLI flag        | Environment variable  | Config file   | Required | Description                                                                       |
+| --------------- | --------------------- | ------------- | -------- | --------------------------------------------------------------------------------- |
+| `--bucket`      | `REPRINT_BUCKET`      | `bucket`      | Yes      | GCS bucket name                                                                   |
+| `--prefix`      | `REPRINT_PREFIX`      | `prefix`      | No       | Object prefix (default: empty)                                                    |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No       | Service account key file path (default: `~/.config/reprint-gcs/credentials.json`) |
 
 **Priority:** CLI flag > Environment variable > Config file > Default path
 
@@ -31,6 +31,7 @@ Configuration can be set via CLI flags, environment variables, or config file.
 A service account key file is required. User credentials (`gcloud auth application-default login`) are not supported because signed URLs require a private key for signing.
 
 **Setup:**
+
 1. Create a service account in GCP Console
 2. Download the key file (JSON)
 3. Place at `~/.config/reprint-gcs/credentials.json`
@@ -42,15 +43,17 @@ A service account key file is required. User credentials (`gcloud auth applicati
 Reads image data from stdin and uploads it to GCS.
 
 **Input:**
+
 - stdin: Image binary data
 
-| CLI flag | Environment variable | Required | Description |
-|----------|---------------------|----------|-------------|
-| `--mime` | `DECK_UPLOAD_MIME` | Yes | Image MIME type |
+| CLI flag | Environment variable | Required | Description     |
+| -------- | -------------------- | -------- | --------------- |
+| `--mime` | `DECK_UPLOAD_MIME`   | Yes      | Image MIME type |
 
 **Priority:** CLI flag > Environment variable
 
 **Output (stdout):**
+
 ```
 <Signed URL>
 <id>
@@ -65,9 +68,9 @@ Deletes the specified object from GCS.
 
 **Input:**
 
-| CLI flag | Environment variable | Required | Description |
-|----------|---------------------|----------|-------------|
-| `--object-id` | `DECK_DELETE_ID` | Yes | Object ID to delete |
+| CLI flag      | Environment variable | Required | Description         |
+| ------------- | -------------------- | -------- | ------------------- |
+| `--object-id` | `DECK_DELETE_ID`     | Yes      | Object ID to delete |
 
 **Priority:** CLI flag > Environment variable
 
@@ -91,19 +94,19 @@ Making the bucket public is a security risk and unnecessary for this use case.
 
 The service account needs the following permissions on the bucket:
 
-| Permission | Purpose |
-|------------|---------|
-| `storage.objects.create` | Upload objects |
-| `storage.objects.delete` | Delete objects |
-| `storage.objects.get` | Generate Signed URLs |
-| `storage.buckets.get` | Check bucket access (for `doctor` command) |
+| Permission               | Purpose                                    |
+| ------------------------ | ------------------------------------------ |
+| `storage.objects.create` | Upload objects                             |
+| `storage.objects.delete` | Delete objects                             |
+| `storage.objects.get`    | Generate Signed URLs                       |
+| `storage.buckets.get`    | Check bucket access (for `doctor` command) |
 
 These permissions can be granted with the following roles:
 
-| Role | Purpose |
-|------|---------|
-| `roles/storage.objectAdmin` | Upload/delete objects, generate Signed URLs |
-| `roles/storage.bucketViewer` | Check bucket access (for `doctor` command) |
+| Role                         | Purpose                                     |
+| ---------------------------- | ------------------------------------------- |
+| `roles/storage.objectAdmin`  | Upload/delete objects, generate Signed URLs |
+| `roles/storage.bucketViewer` | Check bucket access (for `doctor` command)  |
 
 ```bash
 # Grant permissions to a service account
