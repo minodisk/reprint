@@ -61,6 +61,22 @@ mise run emulator:gcs:stop
     └── adr/               # Architecture Decision Records
 ```
 
+## Release
+
+Releases are automated with [GoReleaser](https://goreleaser.com/).
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers GitHub Actions to:
+1. Build binaries for all platforms (linux, darwin, windows × amd64, arm64)
+2. Create GitHub release with changelog
+3. Upload pre-built binaries
+
+See [ADR 0002](docs/adr/0002-release-process.md) for details.
+
 ## Architecture Decision Records
 
-Design decisions are documented in `docs/adr/`. See [ADR 0001](docs/adr/0001-cli-framework.md) for an example.
+Design decisions are documented in `docs/adr/`.
