@@ -18,21 +18,22 @@ deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}
 
 Configuration can be set via CLI flags, environment variables, or config file.
 
-**Priority (highest to lowest):** CLI flag > Environment variable > Config file
+**Priority (highest to lowest):** CLI flag > Environment variable > Config file > Default path
 
 | CLI flag | Environment variable | Config file | Required | Description |
 |----------|---------------------|-------------|----------|-------------|
 | `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
 | `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
-| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path (default: `~/.config/reprint-gcs/credentials.json`) |
 
 ### Authentication
 
-**Priority (highest to lowest):**
-1. `--credentials` / `REPRINT_CREDENTIALS` / `credentials` (service account key file)
-2. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-3. `gcloud auth application-default login`
-4. GCE/Cloud Run metadata server
+A service account key file is required. User credentials (`gcloud auth application-default login`) are not supported because signed URLs require a private key for signing.
+
+**Setup:**
+1. Create a service account in GCP Console
+2. Download the key file (JSON)
+3. Place at `~/.config/reprint-gcs/credentials.json`
 
 ## Commands
 
@@ -49,11 +50,12 @@ Reads image data from stdin and uploads it to GCS.
 
 **Output (stdout):**
 ```
-<public URL>
+<Signed URL>
 <filename>
 ```
 
-Filename is auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`).
+- **Signed URL**: Temporary URL with expiration (default: 15 minutes). The bucket does not need to be public.
+- **filename**: Auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`)
 
 ### delete
 
@@ -65,22 +67,68 @@ Deletes the specified object from GCS.
 |----------|---------------------|----------|-------------|
 | `--filename` | `DECK_DELETE_FILENAME` | Yes | Filename to delete |
 
+## GCS Bucket Setup
+
+### Creating a Bucket
+
+```bash
+gcloud storage buckets create gs://your-bucket-name --location=REGION
+```
+
+Choose a region close to your users. See [available locations](https://cloud.google.com/storage/docs/locations).
+
+### Security
+
+**Do NOT make the bucket public.** reprint-gcs uses [Signed URLs](https://cloud.google.com/storage/docs/access-control/signed-urls) for temporary access. deck only needs temporary access to embed images in Google Slides, then deletes the files.
+
+Making the bucket public is a security risk and unnecessary for this use case.
+
+### Required IAM Permissions
+
+The service account needs the following permissions on the bucket:
+
+- `storage.objects.create` - Upload objects
+- `storage.objects.delete` - Delete objects
+- `storage.objects.get` - Generate Signed URLs
+- `storage.buckets.get` - Check bucket access (for `doctor` command)
+
+**Recommended role:** `roles/storage.objectAdmin` on the specific bucket.
+
+```bash
+# Grant permissions to a service account
+gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
+  --member=serviceAccount:your-sa@project.iam.gserviceaccount.com \
+  --role=roles/storage.objectAdmin
+```
+
 ## Example
 
-### Config file
+### Minimal setup (using default credentials path)
 
-Create `~/.config/reprint/config.yaml`:
+1. Place credentials at `~/.config/reprint-gcs/credentials.json`
+2. Create `~/.config/reprint/config.yaml`:
 
 ```yaml
 bucket: my-images-bucket
-prefix: deck/
 ```
 
-### Environment variables
+### Custom credentials path
+
+If you want to use a different credentials path:
+
+```yaml
+# ~/.config/reprint/config.yaml
+bucket: my-images-bucket
+prefix: deck/
+credentials: /path/to/service-account-key.json
+```
+
+Or via environment variables:
 
 ```bash
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
+export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### Usage
@@ -92,7 +140,7 @@ deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}
 # Manual upload test
 cat image.png | reprint-gcs upload
 # Output:
-# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-5678-90ab-cdef-1234567890ab
+# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-...?X-Goog-Algorithm=...&X-Goog-Expires=900&X-Goog-Signature=...
 # a1b2c3d4-5678-90ab-cdef-1234567890ab
 
 # Manual delete test

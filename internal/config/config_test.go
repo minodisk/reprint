@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -135,5 +136,134 @@ func TestLoad_EmptyOptionsDoNotOverride(t *testing.T) {
 	}
 	if cfg.Prefix != "env-prefix/" {
 		t.Errorf("Prefix = %q, want %q", cfg.Prefix, "env-prefix/")
+	}
+}
+
+func TestDefaultCredentialsPath(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("cannot get home directory")
+	}
+
+	tests := []struct {
+		name    string
+		appName string
+		want    string
+	}{
+		{
+			name:    "reprint-gcs",
+			appName: "reprint-gcs",
+			want:    filepath.Join(home, ".config", "reprint-gcs", "credentials.json"),
+		},
+		{
+			name:    "reprint-s3",
+			appName: "reprint-s3",
+			want:    filepath.Join(home, ".config", "reprint-s3", "credentials.json"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DefaultCredentialsPath(tt.appName)
+			if got != tt.want {
+				t.Errorf("DefaultCredentialsPath(%q) = %q, want %q", tt.appName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLoad_WithAppName_DefaultCredentials(t *testing.T) {
+	// Clear environment variables
+	os.Unsetenv("REPRINT_BUCKET")
+	os.Unsetenv("REPRINT_PREFIX")
+	os.Unsetenv("REPRINT_CREDENTIALS")
+
+	// Create a temporary directory for default credentials
+	tmpDir := t.TempDir()
+	appName := "test-app"
+	credDir := filepath.Join(tmpDir, ".config", appName)
+	if err := os.MkdirAll(credDir, 0755); err != nil {
+		t.Fatalf("failed to create directory: %v", err)
+	}
+	credFile := filepath.Join(credDir, DefaultCredentialsFilename)
+	if err := os.WriteFile(credFile, []byte("{}"), 0644); err != nil {
+		t.Fatalf("failed to create credentials file: %v", err)
+	}
+
+	// Override home directory for test
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", origHome)
+
+	cfg, err := Load(WithAppName(appName))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Credentials != credFile {
+		t.Errorf("Credentials = %q, want %q", cfg.Credentials, credFile)
+	}
+}
+
+func TestLoad_WithAppName_NoDefaultCredentials(t *testing.T) {
+	// Clear environment variables
+	os.Unsetenv("REPRINT_BUCKET")
+	os.Unsetenv("REPRINT_PREFIX")
+	os.Unsetenv("REPRINT_CREDENTIALS")
+
+	// Create a temporary directory without credentials file
+	tmpDir := t.TempDir()
+
+	// Override home directory for test
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", origHome)
+
+	cfg, err := Load(WithAppName("test-app"))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	// Should be empty since no default credentials file exists
+	if cfg.Credentials != "" {
+		t.Errorf("Credentials = %q, want empty", cfg.Credentials)
+	}
+}
+
+func TestLoad_ExplicitCredentialsPriorityOverDefault(t *testing.T) {
+	// Clear environment variables
+	os.Unsetenv("REPRINT_BUCKET")
+	os.Unsetenv("REPRINT_PREFIX")
+	os.Unsetenv("REPRINT_CREDENTIALS")
+
+	// Create a temporary directory with default credentials
+	tmpDir := t.TempDir()
+	appName := "test-app"
+	credDir := filepath.Join(tmpDir, ".config", appName)
+	if err := os.MkdirAll(credDir, 0755); err != nil {
+		t.Fatalf("failed to create directory: %v", err)
+	}
+	defaultCredFile := filepath.Join(credDir, DefaultCredentialsFilename)
+	if err := os.WriteFile(defaultCredFile, []byte("{}"), 0644); err != nil {
+		t.Fatalf("failed to create credentials file: %v", err)
+	}
+
+	// Override home directory for test
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", origHome)
+
+	// Explicit credentials should take priority over default
+	explicitCreds := "/explicit/path/to/creds.json"
+	cfg, err := Load(
+		WithAppName(appName),
+		WithCredentials(explicitCreds),
+	)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Credentials != explicitCreds {
+		t.Errorf("Credentials = %q, want %q", cfg.Credentials, explicitCreds)
 	}
 }
