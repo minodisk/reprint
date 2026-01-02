@@ -49,11 +49,12 @@ Reads image data from stdin and uploads it to GCS.
 
 **Output (stdout):**
 ```
-<public URL>
+<Signed URL>
 <filename>
 ```
 
-Filename is auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`).
+- **Signed URL**: Temporary URL with expiration (default: 15 minutes). The bucket does not need to be public.
+- **filename**: Auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`)
 
 ### delete
 
@@ -64,6 +65,40 @@ Deletes the specified object from GCS.
 | CLI flag | Environment variable | Required | Description |
 |----------|---------------------|----------|-------------|
 | `--filename` | `DECK_DELETE_FILENAME` | Yes | Filename to delete |
+
+## GCS Bucket Setup
+
+### Creating a Bucket
+
+```bash
+gcloud storage buckets create gs://your-bucket-name --location=REGION
+```
+
+Choose a region close to your users. See [available locations](https://cloud.google.com/storage/docs/locations).
+
+### Security
+
+**Do NOT make the bucket public.** reprint-gcs uses [Signed URLs](https://cloud.google.com/storage/docs/access-control/signed-urls) for temporary access. deck only needs temporary access to embed images in Google Slides, then deletes the files.
+
+Making the bucket public is a security risk and unnecessary for this use case.
+
+### Required IAM Permissions
+
+The service account or user needs the following permissions on the bucket:
+
+- `storage.objects.create` - Upload objects
+- `storage.objects.delete` - Delete objects
+- `storage.objects.get` - Generate Signed URLs
+- `storage.buckets.get` - Check bucket access (for `doctor` command)
+
+**Recommended role:** `roles/storage.objectAdmin` on the specific bucket.
+
+```bash
+# Grant permissions to a service account
+gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
+  --member=serviceAccount:your-sa@project.iam.gserviceaccount.com \
+  --role=roles/storage.objectAdmin
+```
 
 ## Example
 
@@ -92,7 +127,7 @@ deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}
 # Manual upload test
 cat image.png | reprint-gcs upload
 # Output:
-# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-5678-90ab-cdef-1234567890ab
+# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-...?X-Goog-Algorithm=...&X-Goog-Expires=900&X-Goog-Signature=...
 # a1b2c3d4-5678-90ab-cdef-1234567890ab
 
 # Manual delete test
