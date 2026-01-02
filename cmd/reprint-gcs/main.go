@@ -46,7 +46,7 @@ func init() {
 	// Root flags
 	rootCmd.PersistentFlags().StringVar(&bucket, "bucket", "", "GCS bucket name")
 	rootCmd.PersistentFlags().StringVar(&prefix, "prefix", "", "Object prefix")
-	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path (required)")
+	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path")
 
 	// Upload flags
 	uploadCmd.Flags().StringVar(&mime, "mime", "", "Image MIME type")
@@ -146,7 +146,7 @@ func loadConfig() (*config.Config, error) {
 		return nil, fmt.Errorf("bucket is required (--bucket, REPRINT_BUCKET, or config file)")
 	}
 	if cfg.Credentials == "" {
-		return nil, fmt.Errorf("credentials is required (--credentials, REPRINT_CREDENTIALS, or config file)")
+		return nil, fmt.Errorf("credentials is required (--credentials, REPRINT_CREDENTIALS, config file, or place at %s)", config.DefaultCredentialsPath(appName))
 	}
 
 	return cfg, nil

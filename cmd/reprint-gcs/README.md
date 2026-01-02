@@ -103,22 +103,32 @@ gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
 
 ## Example
 
-### Config file
+### Minimal setup (using default credentials path)
 
-Create `~/.config/reprint/config.yaml`:
+1. Place credentials at `~/.config/reprint-gcs/credentials.json`
+2. Create `~/.config/reprint/config.yaml`:
 
 ```yaml
-credentials: /path/to/service-account-key.json
 bucket: my-images-bucket
-prefix: deck/
 ```
 
-### Environment variables
+### Custom credentials path
+
+If you want to use a different credentials path:
+
+```yaml
+# ~/.config/reprint/config.yaml
+bucket: my-images-bucket
+prefix: deck/
+credentials: /path/to/service-account-key.json
+```
+
+Or via environment variables:
 
 ```bash
-export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
+export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### Usage
