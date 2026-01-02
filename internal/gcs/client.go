@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
+)
+
+const (
+	// DefaultSignedURLExpiration is the default expiration time for signed URLs.
+	DefaultSignedURLExpiration = 15 * time.Minute
 )
 
 // Client wraps the GCS client.
@@ -18,8 +24,7 @@ type Client struct {
 }
 
 // NewClient creates a new GCS client.
-// If credentials is provided, it will be used for authentication.
-// Otherwise, default credentials will be used.
+// credentials must be a path to a service account key file (required for signed URLs).
 func NewClient(ctx context.Context, bucket, prefix, credentials string) (*Client, error) {
 	return NewClientWithEndpoint(ctx, bucket, prefix, credentials, "")
 }
@@ -53,7 +58,7 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-// Upload uploads data to GCS and returns the public URL.
+// Upload uploads data to GCS and returns a signed URL.
 func (c *Client) Upload(ctx context.Context, filename string, data io.Reader, contentType string) (string, error) {
 	objectName := c.objectName(filename)
 	obj := c.client.Bucket(c.bucket).Object(objectName)
@@ -69,7 +74,29 @@ func (c *Client) Upload(ctx context.Context, filename string, data io.Reader, co
 		return "", fmt.Errorf("failed to close GCS writer: %w", err)
 	}
 
-	return c.PublicURL(filename), nil
+	return c.SignedURL(filename, DefaultSignedURLExpiration)
+}
+
+// SignedURL returns a signed URL for an object with the specified expiration.
+// Requires a service account key file to be configured via credentials.
+func (c *Client) SignedURL(filename string, expiration time.Duration) (string, error) {
+	// For emulator, return public URL (signed URLs don't work with emulator)
+	if c.endpoint != "" {
+		return c.PublicURL(filename), nil
+	}
+
+	objectName := c.objectName(filename)
+	opts := &storage.SignedURLOptions{
+		Method:  "GET",
+		Expires: time.Now().Add(expiration),
+	}
+
+	url, err := c.client.Bucket(c.bucket).SignedURL(objectName, opts)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate signed URL: %w", err)
+	}
+
+	return url, nil
 }
 
 // Delete deletes an object from GCS.

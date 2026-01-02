@@ -46,7 +46,7 @@ func init() {
 	// Root flags
 	rootCmd.PersistentFlags().StringVar(&bucket, "bucket", "", "GCS bucket name")
 	rootCmd.PersistentFlags().StringVar(&prefix, "prefix", "", "Object prefix")
-	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path")
+	rootCmd.PersistentFlags().StringVar(&credentials, "credentials", "", "Service account key file path (required)")
 
 	// Upload flags
 	uploadCmd.Flags().StringVar(&mime, "mime", "", "Image MIME type")
@@ -142,6 +142,9 @@ func loadConfig() (*config.Config, error) {
 	if cfg.Bucket == "" {
 		return nil, fmt.Errorf("bucket is required (--bucket, REPRINT_BUCKET, or config file)")
 	}
+	if cfg.Credentials == "" {
+		return nil, fmt.Errorf("credentials is required (--credentials, REPRINT_CREDENTIALS, or config file)")
+	}
 
 	return cfg, nil
 }
@@ -183,16 +186,32 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		fmt.Printf("OK (%s)\n", cfg.Prefix)
 	}
 
-	// Check 4: Credentials
-	fmt.Print("[Auth] Credentials... ")
-	if cfg.Credentials != "" {
-		fmt.Printf("OK (using %s)\n", cfg.Credentials)
+	// Check 4: Credentials configured
+	fmt.Print("[Auth] Credentials configured... ")
+	if cfg.Credentials == "" {
+		fmt.Println("ERROR: credentials is not configured")
+		fmt.Println("  Set via: --credentials, REPRINT_CREDENTIALS, or ~/.config/reprint/config.yaml")
+		allOK = false
 	} else {
-		fmt.Println("OK (using default credentials)")
+		fmt.Printf("OK (%s)\n", cfg.Credentials)
 	}
 
-	// Check 5: GCS connection (only if bucket is configured)
-	if cfg.Bucket != "" {
+	// Check 5: Credentials file exists
+	if cfg.Credentials != "" {
+		fmt.Print("[Auth] Credentials file exists... ")
+		if _, err := os.Stat(cfg.Credentials); os.IsNotExist(err) {
+			fmt.Printf("ERROR: file not found: %s\n", cfg.Credentials)
+			allOK = false
+		} else if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			allOK = false
+		} else {
+			fmt.Println("OK")
+		}
+	}
+
+	// Check 6: GCS connection (only if bucket and credentials are configured)
+	if cfg.Bucket != "" && cfg.Credentials != "" {
 		fmt.Print("[GCS] Connecting to GCS... ")
 		ctx := context.Background()
 		client, err := gcs.NewClient(ctx, cfg.Bucket, cfg.Prefix, cfg.Credentials)
@@ -203,7 +222,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 			defer client.Close()
 			fmt.Println("OK")
 
-			// Check 6: Bucket access
+			// Check 7: Bucket access
 			fmt.Print("[GCS] Checking bucket access... ")
 			if err := client.CheckBucket(ctx); err != nil {
 				fmt.Printf("ERROR: %v\n", err)

@@ -24,15 +24,16 @@ Configuration can be set via CLI flags, environment variables, or config file.
 |----------|---------------------|-------------|----------|-------------|
 | `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
 | `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
-| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path |
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | Yes | Service account key file path |
 
 ### Authentication
 
-**Priority (highest to lowest):**
-1. `--credentials` / `REPRINT_CREDENTIALS` / `credentials` (service account key file)
-2. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-3. `gcloud auth application-default login`
-4. GCE/Cloud Run metadata server
+A service account key file is required. User credentials (`gcloud auth application-default login`) are not supported because signed URLs require a private key for signing.
+
+**Setup:**
+1. Create a service account in GCP Console
+2. Download the key file (JSON)
+3. Set via `--credentials`, `REPRINT_CREDENTIALS`, or config file
 
 ## Commands
 
@@ -84,7 +85,7 @@ Making the bucket public is a security risk and unnecessary for this use case.
 
 ### Required IAM Permissions
 
-The service account or user needs the following permissions on the bucket:
+The service account needs the following permissions on the bucket:
 
 - `storage.objects.create` - Upload objects
 - `storage.objects.delete` - Delete objects
@@ -109,6 +110,7 @@ Create `~/.config/reprint/config.yaml`:
 ```yaml
 bucket: my-images-bucket
 prefix: deck/
+credentials: /path/to/service-account-key.json
 ```
 
 ### Environment variables
@@ -116,6 +118,7 @@ prefix: deck/
 ```bash
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
+export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### Usage

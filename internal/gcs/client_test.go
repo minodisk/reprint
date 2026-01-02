@@ -1,6 +1,9 @@
 package gcs
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestClient_objectName(t *testing.T) {
 	tests := []struct {
@@ -70,5 +73,38 @@ func TestClient_PublicURL(t *testing.T) {
 				t.Errorf("PublicURL() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestClient_SignedURL_Emulator(t *testing.T) {
+	// When using emulator, SignedURL should return public URL
+	c := &Client{
+		bucket:   "test-bucket",
+		prefix:   "test-prefix/",
+		endpoint: "http://localhost:4443/storage/v1/",
+	}
+
+	url, err := c.SignedURL("test-file", 15*time.Minute)
+	if err != nil {
+		t.Fatalf("SignedURL() error = %v", err)
+	}
+
+	want := "http://localhost:4443/test-bucket/test-prefix/test-file"
+	if url != want {
+		t.Errorf("SignedURL() = %q, want %q", url, want)
+	}
+}
+
+func TestClient_PublicURL_Emulator(t *testing.T) {
+	c := &Client{
+		bucket:   "test-bucket",
+		prefix:   "test-prefix/",
+		endpoint: "http://localhost:4443/storage/v1/",
+	}
+
+	got := c.PublicURL("test-file")
+	want := "http://localhost:4443/test-bucket/test-prefix/test-file"
+	if got != want {
+		t.Errorf("PublicURL() = %q, want %q", got, want)
 	}
 }
