@@ -12,10 +12,10 @@
 
 ## 対応ストレージ
 
-| CLI | ストレージ | ドキュメント |
-|-----|-----------|-------------|
+| CLI                              | ストレージ           | ドキュメント                        |
+| -------------------------------- | -------------------- | ----------------------------------- |
 | [`reprint-gcs`](cmd/reprint-gcs) | Google Cloud Storage | [README](cmd/reprint-gcs/README.md) |
-| `reprint-s3` | Amazon S3 | 未実装 |
+| `reprint-s3`                     | Amazon S3            | 未実装                              |
 
 ## ライセンス
 

@@ -14,10 +14,10 @@ reprint uses [Signed URLs](https://cloud.google.com/storage/docs/access-control/
 
 ## Supported Storage
 
-| CLI | Storage | Documentation |
-|-----|---------|---------------|
+| CLI                              | Storage              | Documentation                       |
+| -------------------------------- | -------------------- | ----------------------------------- |
 | [`reprint-gcs`](cmd/reprint-gcs) | Google Cloud Storage | [README](cmd/reprint-gcs/README.md) |
-| `reprint-s3` | Amazon S3 | Not yet implemented |
+| `reprint-s3`                     | Amazon S3            | Not yet implemented                 |
 
 ## License
 

@@ -32,16 +32,19 @@ mise run test
 Integration tests require [fake-gcs-server](https://github.com/fsouza/fake-gcs-server) emulator.
 
 **Terminal 1: Start emulator**
+
 ```bash
 mise run emulator:gcs
 ```
 
 **Terminal 2: Run tests**
+
 ```bash
 mise run test:integration
 ```
 
 **Stop emulator**
+
 ```bash
 mise run emulator:gcs:stop
 # or Ctrl+C in terminal 1
@@ -88,6 +91,7 @@ git push origin v1.0.0
 ```
 
 This triggers GitHub Actions to:
+
 1. Build binaries for all platforms (linux, darwin, windows × amd64, arm64)
 2. Create GitHub release with changelog
 3. Upload pre-built binaries

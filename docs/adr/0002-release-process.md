@@ -18,6 +18,7 @@ We chose **GoReleaser** for the following reasons:
 ### 1. Automation
 
 GoReleaser automates the entire release process:
+
 - Build binaries for multiple platforms (linux, darwin, windows × amd64, arm64)
 - Create GitHub releases with changelogs
 - Upload pre-built binaries
@@ -25,6 +26,7 @@ GoReleaser automates the entire release process:
 ### 2. Unified Versioning
 
 All CLIs (reprint-gcs, reprint-s3) share the same version number:
+
 - Single git tag (e.g., `v1.0.0`) releases all CLIs
 - Simpler version management
 - Consistent internal package versions
@@ -52,6 +54,7 @@ All CLIs (reprint-gcs, reprint-s3) share the same version number:
 ## Installation Methods
 
 ### 1. Homebrew (macOS/Linux)
+
 ```bash
 brew tap minodisk/tap
 brew install reprint-gcs
@@ -60,6 +63,7 @@ brew install reprint-gcs
 ### 2. Download Binary
 
 Download from [GitHub Releases](https://github.com/minodisk/reprint/releases):
+
 ```bash
 # Example for macOS arm64
 curl -LO https://github.com/minodisk/reprint/releases/download/v1.0.0/reprint-gcs_1.0.0_darwin_arm64.tar.gz
@@ -68,6 +72,7 @@ mv reprint-gcs /usr/local/bin/
 ```
 
 ### 2. Go Install
+
 ```bash
 go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ```

@@ -31,6 +31,7 @@ rootCmd.AddCommand(deleteCmd)
 ### 3. Flag Management
 
 Cobra integrates well with spf13/pflag for POSIX-compliant flag parsing:
+
 - Persistent flags (shared across subcommands)
 - Command-specific flags
 - Environment variable binding via viper
