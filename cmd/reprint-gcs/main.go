@@ -16,7 +16,7 @@ var (
 	prefix      string
 	credentials string
 	mime        string
-	filename    string
+	objectID    string
 )
 
 var rootCmd = &cobra.Command{
@@ -52,7 +52,7 @@ func init() {
 	uploadCmd.Flags().StringVar(&mime, "mime", "", "Image MIME type")
 
 	// Delete flags
-	deleteCmd.Flags().StringVar(&filename, "filename", "", "Filename to delete")
+	deleteCmd.Flags().StringVar(&objectID, "object-id", "", "Object ID to delete")
 
 	// Add subcommands
 	rootCmd.AddCommand(uploadCmd)
@@ -110,12 +110,12 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get filename from flag or environment variable
-	if filename == "" {
-		filename = os.Getenv("DECK_DELETE_FILENAME")
+	// Get object ID from flag or environment variable
+	if objectID == "" {
+		objectID = os.Getenv("DECK_DELETE_ID")
 	}
-	if filename == "" {
-		return fmt.Errorf("filename is required (--filename or DECK_DELETE_FILENAME)")
+	if objectID == "" {
+		return fmt.Errorf("object-id is required (--object-id or DECK_DELETE_ID)")
 	}
 
 	ctx := context.Background()
@@ -125,7 +125,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	}
 	defer client.Close()
 
-	return client.Delete(ctx, filename)
+	return client.Delete(ctx, objectID)
 }
 
 const appName = "reprint-gcs"

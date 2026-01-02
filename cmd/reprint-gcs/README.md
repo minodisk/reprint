@@ -11,20 +11,20 @@ go install github.com/minodisk/reprint/cmd/reprint-gcs@latest
 ## Usage with deck
 
 ```bash
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" slide.md
+deck apply -u "reprint-gcs upload --mime {{mime}}" -d "reprint-gcs delete --object-id {{id}}" slide.md
 ```
 
 ## Configuration
 
 Configuration can be set via CLI flags, environment variables, or config file.
 
-**Priority (highest to lowest):** CLI flag > Environment variable > Config file > Default path
-
 | CLI flag | Environment variable | Config file | Required | Description |
 |----------|---------------------|-------------|----------|-------------|
 | `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
 | `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
 | `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | No | Service account key file path (default: `~/.config/reprint-gcs/credentials.json`) |
+
+**Priority:** CLI flag > Environment variable > Config file > Default path
 
 ### Authentication
 
@@ -48,14 +48,16 @@ Reads image data from stdin and uploads it to GCS.
 |----------|---------------------|----------|-------------|
 | `--mime` | `DECK_UPLOAD_MIME` | Yes | Image MIME type |
 
+**Priority:** CLI flag > Environment variable
+
 **Output (stdout):**
 ```
 <Signed URL>
-<filename>
+<id>
 ```
 
 - **Signed URL**: Temporary URL with expiration (default: 15 minutes). The bucket does not need to be public.
-- **filename**: Auto-generated UUID without extension (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`)
+- **id**: Auto-generated UUID (e.g., `a1b2c3d4-5678-90ab-cdef-1234567890ab`). Used as GCS object name.
 
 ### delete
 
@@ -65,7 +67,9 @@ Deletes the specified object from GCS.
 
 | CLI flag | Environment variable | Required | Description |
 |----------|---------------------|----------|-------------|
-| `--filename` | `DECK_DELETE_FILENAME` | Yes | Filename to delete |
+| `--object-id` | `DECK_DELETE_ID` | Yes | Object ID to delete |
+
+**Priority:** CLI flag > Environment variable
 
 ## GCS Bucket Setup
 
@@ -87,18 +91,29 @@ Making the bucket public is a security risk and unnecessary for this use case.
 
 The service account needs the following permissions on the bucket:
 
-- `storage.objects.create` - Upload objects
-- `storage.objects.delete` - Delete objects
-- `storage.objects.get` - Generate Signed URLs
-- `storage.buckets.get` - Check bucket access (for `doctor` command)
+| Permission | Purpose |
+|------------|---------|
+| `storage.objects.create` | Upload objects |
+| `storage.objects.delete` | Delete objects |
+| `storage.objects.get` | Generate Signed URLs |
+| `storage.buckets.get` | Check bucket access (for `doctor` command) |
 
-**Recommended role:** `roles/storage.objectAdmin` on the specific bucket.
+These permissions can be granted with the following roles:
+
+| Role | Purpose |
+|------|---------|
+| `roles/storage.objectAdmin` | Upload/delete objects, generate Signed URLs |
+| `roles/storage.bucketViewer` | Check bucket access (for `doctor` command) |
 
 ```bash
 # Grant permissions to a service account
 gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
   --member=serviceAccount:your-sa@project.iam.gserviceaccount.com \
   --role=roles/storage.objectAdmin
+
+gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
+  --member=serviceAccount:your-sa@project.iam.gserviceaccount.com \
+  --role=roles/storage.bucketViewer
 ```
 
 ## Example
@@ -134,15 +149,5 @@ export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 ### Usage
 
 ```bash
-# Use with deck
-deck apply -u "reprint-gcs upload" -d "reprint-gcs delete --filename {{filename}}" presentation.md
-
-# Manual upload test
-cat image.png | reprint-gcs upload
-# Output:
-# https://storage.googleapis.com/my-images-bucket/deck/a1b2c3d4-...?X-Goog-Algorithm=...&X-Goog-Expires=900&X-Goog-Signature=...
-# a1b2c3d4-5678-90ab-cdef-1234567890ab
-
-# Manual delete test
-reprint-gcs delete --filename a1b2c3d4-5678-90ab-cdef-1234567890ab
+deck apply -u "reprint-gcs upload --mime {{mime}}" -d "reprint-gcs delete --object-id {{id}}" presentation.md
 ```

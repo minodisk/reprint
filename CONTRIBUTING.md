@@ -47,6 +47,23 @@ mise run emulator:gcs:stop
 # or Ctrl+C in terminal 1
 ```
 
+### Manual Testing
+
+#### Upload
+
+```bash
+cat image.png | ./tmp/reprint-gcs upload --mime image/png
+# Output:
+# https://storage.googleapis.com/my-bucket/a1b2c3d4-...?X-Goog-Algorithm=...&X-Goog-Expires=900&X-Goog-Signature=...
+# a1b2c3d4-5678-90ab-cdef-1234567890ab
+```
+
+#### Delete
+
+```bash
+./tmp/reprint-gcs delete --object-id a1b2c3d4-5678-90ab-cdef-1234567890ab
+```
+
 ## Project Structure
 
 ```
