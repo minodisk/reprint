@@ -42,6 +42,22 @@ archives:
       - goos: windows
         format: zip
 
+brews:
+  - name: reprint-gcs
+    ids:
+      - reprint-gcs
+    repository:
+      owner: minodisk
+      name: homebrew-tap
+    directory: Formula
+    homepage: https://github.com/minodisk/reprint
+    description: External image uploader CLI for deck using Google Cloud Storage
+    license: MIT
+    install: |
+      bin.install "reprint-gcs"
+    test: |
+      system "#{bin}/reprint-gcs", "--help"
+
 checksum:
   name_template: "checksums.txt"
 
