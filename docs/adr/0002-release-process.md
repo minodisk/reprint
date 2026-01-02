@@ -41,10 +41,23 @@ All CLIs (reprint-gcs, reprint-s3) share the same version number:
    - Builds binaries for all platforms
    - Creates GitHub release with changelog
    - Uploads pre-built binaries to GitHub Releases
+   - Updates Homebrew tap formula
+
+## Homebrew Tap Setup (for maintainers)
+
+1. Create repository: `minodisk/homebrew-tap`
+2. Create GitHub Personal Access Token with `repo` scope
+3. Add token as `HOMEBREW_TAP_GITHUB_TOKEN` secret in reprint repo
 
 ## Installation Methods
 
-### 1. Download Binary
+### 1. Homebrew (macOS/Linux)
+```bash
+brew tap minodisk/tap
+brew install reprint-gcs
+```
+
+### 2. Download Binary
 
 Download from [GitHub Releases](https://github.com/minodisk/reprint/releases):
 ```bash

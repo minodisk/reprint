@@ -74,6 +74,7 @@ This triggers GitHub Actions to:
 1. Build binaries for all platforms (linux, darwin, windows × amd64, arm64)
 2. Create GitHub release with changelog
 3. Upload pre-built binaries
+4. Update Homebrew tap formula
 
 See [ADR 0002](docs/adr/0002-release-process.md) for details.
 
