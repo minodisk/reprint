@@ -22,9 +22,9 @@ Configuration can be set via CLI flags, environment variables, or config file.
 
 | CLI flag | Environment variable | Config file | Required | Description |
 |----------|---------------------|-------------|----------|-------------|
+| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | Yes | Service account key file path |
 | `--bucket` | `REPRINT_BUCKET` | `bucket` | Yes | GCS bucket name |
 | `--prefix` | `REPRINT_PREFIX` | `prefix` | No | Object prefix (default: empty) |
-| `--credentials` | `REPRINT_CREDENTIALS` | `credentials` | Yes | Service account key file path |
 
 ### Authentication
 
@@ -108,17 +108,17 @@ gcloud storage buckets add-iam-policy-binding gs://your-bucket-name \
 Create `~/.config/reprint/config.yaml`:
 
 ```yaml
+credentials: /path/to/service-account-key.json
 bucket: my-images-bucket
 prefix: deck/
-credentials: /path/to/service-account-key.json
 ```
 
 ### Environment variables
 
 ```bash
+export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 export REPRINT_BUCKET=my-images-bucket
 export REPRINT_PREFIX=deck/
-export REPRINT_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### Usage
